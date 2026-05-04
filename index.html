@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Date Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .reel-container {
+            height: 100px;
+            overflow: hidden;
+            border: 2px solid #333;
+            background: #fff;
+            border-radius: 8px;
+        }
+        .reel {
+            transition: transform 2.5s cubic-bezier(0.2, 0, 0.1, 1);
+        }
+        .slot-item {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            padding: 0 10px;
+            border-bottom: 1px solid #eee;
+            color: #000;
+        }
+        .rarity-0 { color: #555; } /* Common */
+        .rarity-1 { color: #2563eb; } /* Rare */
+        .rarity-2 { color: #7c3aed; } /* Epic */
+        .rarity-3 { color: #db2777; } /* Legendary */
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+        <h1 class="text-2xl font-black mb-6 text-center uppercase tracking-tighter">Date Generator</h1>
+        
+        <div class="grid grid-cols-3 gap-2 mb-6">
+            <div class="reel-container"><div id="reel-0" class="reel"></div></div>
+            <div class="reel-container"><div id="reel-1" class="reel"></div></div>
+            <div class="reel-container"><div id="reel-2" class="reel"></div></div>
+        </div>
+
+        <button id="spin-btn" class="w-full bg-black text-white py-4 font-bold rounded-md hover:bg-gray-800 transition-colors">
+            GENERATE DATE
+        </button>
+
+        <div id="result-box" class="mt-8 p-4 bg-gray-50 border-l-4 border-black hidden">
+            <p id="result-text" class="text-lg italic text-gray-800"></p>
+        </div>
+    </div>
+
+    <script>
+        const DATA = [
+            // REEL 1: ACTIVITIES
+            [
+                { text: "Movie Marathon", r: 0 }, { text: "Stargazing", r: 1 }, { text: "Thrift Shopping", r: 0 },
+                { text: "Bowling", r: 0 }, { text: "Painting Night", r: 1 }, { text: "Video Games", r: 0 },
+                { text: "Lego Building", r: 1 }, { text: "Baking Cake", r: 0 }, { text: "Wine Tasting", r: 2 },
+                { text: "Skydiving", r: 3 }, { text: "Karaoke", r: 1 }, { text: "Board Games", r: 0 },
+                { text: "A Mystery Trip", r: 3 }, { text: "Night Hike", r: 2 }, { text: "People Watching", r: 0 },
+                { text: "Cooking Class", r: 2 }, { text: "Photoshoot", r: 1 }, { text: "Blind Tasting", r: 2 },
+                { text: "Reading Aloud", r: 0 }, { text: "IKEA Trip", r: 0 }
+            ],
+            // REEL 2: LOCATIONS
+            [
+                { text: "At Home", r: 0 }, { text: "The Park", r: 0 }, { text: "A Rooftop", r: 2 },
+                { text: "Backyard", r: 0 }, { text: "The Beach", r: 1 }, { text: "A Local Cafe", r: 0 },
+                { text: "Old Town", r: 1 }, { text: "The Library", r: 1 }, { text: "Five-Star Hotel", r: 3 },
+                { text: "A Car", r: 0 }, { text: "The Forest", r: 2 }, { text: "An Arcade", r: 1 },
+                { text: "Museum", r: 1 }, { text: "Secret Garden", r: 2 }, { text: "The Zoo", r: 1 },
+                { text: "Train Station", r: 2 }, { text: "By the Lake", r: 1 }, { text: "Airport Lounge", r: 3 }
+            ],
+            // REEL 3: TWISTS/EXTRAS
+            [
+                { text: "No Phones", r: 1 }, { text: "Costumes Only", r: 2 }, { text: "Under $10", r: 0 },
+                { text: "At 3 AM", r: 2 }, { text: "Whispering Only", r: 3 }, { text: "In Pajamas", r: 0 },
+                { text: "Rain or Shine", r: 1 }, { text: "Competitive", r: 1 }, { text: "Blindfolded", r: 3 },
+                { text: "Film a Vlog", r: 1 }, { text: "Snacks Only", r: 0 }, { text: "Candlelight", r: 1 },
+                { text: "Handcuffed", r: 3 }, { text: "Switch Identities", r: 2 }, { text: "Stranger Rules", r: 2 }
+            ]
+        ];
+
+        const reels = [0, 1, 2].map(i => document.getElementById(`reel-${i}`));
+        const spinBtn = document.getElementById('spin-btn');
+        const resultBox = document.getElementById('result-box');
+        const resultText = document.getElementById('result-text');
+        
+        let spinning = false;
+
+        function buildReels() {
+            reels.forEach((reel, i) => {
+                reel.innerHTML = '';
+                // Fill reel with random deco items
+                for(let j=0; j<40; j++) {
+                    const item = DATA[i][Math.floor(Math.random() * DATA[i].length)];
+                    const div = document.createElement('div');
+                    div.className = `slot-item rarity-${item.r}`;
+                    div.innerText = item.text;
+                    reel.appendChild(div);
+                }
+            });
+        }
+
+        function spin() {
+            if (spinning) return;
+            spinning = true;
+            resultBox.classList.add('hidden');
+            
+            const results = [];
+
+            reels.forEach((reel, i) => {
+                reel.style.transition = 'none';
+                reel.style.transform = 'translateY(0)';
+                
+                // Pick result based on weight
+                const pool = DATA[i];
+                const weights = [60, 25, 10, 5]; // Common, Rare, Epic, Legendary
+                let rand = Math.random() * 100;
+                let rarityTarget = 0;
+                
+                if (rand < 5) rarityTarget = 3;
+                else if (rand < 15) rarityTarget = 2;
+                else if (rand < 40) rarityTarget = 1;
+                else rarityTarget = 0;
+
+                const filtered = pool.filter(x => x.r === rarityTarget);
+                const finalChoice = filtered[Math.floor(Math.random() * filtered.length)] || pool[0];
+                results.push(finalChoice);
+
+                // Inject result into the target slot (index 35)
+                const targetIdx = 35;
+                const slotEl = reel.children[targetIdx];
+                slotEl.innerText = finalChoice.text;
+                slotEl.className = `slot-item rarity-${finalChoice.r}`;
+
+                // Animate
+                setTimeout(() => {
+                    reel.style.transition = `transform ${2 + i * 0.5}s cubic-bezier(0.2, 0, 0.1, 1)`;
+                    reel.style.transform = `translateY(-${targetIdx * 100}px)`;
+                }, 50);
+            });
+
+            setTimeout(() => {
+                resultText.innerText = `${results[0].text} at ${results[1].text} (${results[2].text}).`;
+                resultBox.classList.remove('hidden');
+                spinning = false;
+            }, 3500);
+        }
+
+        spinBtn.addEventListener('click', spin);
+        buildReels();
+    </script>
+</body>
+</html>
